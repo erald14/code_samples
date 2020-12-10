@@ -1,0 +1,226 @@
+service:
+  name: ${env:LAMBDA_PREFIX}
+  awsKmsKeyArn: ${env:KMS_LAMBDA_KEY}
+
+custom:
+  LAMBDA_AUTHORISER:
+    arn: ${env:LAMBDA_AUTHORISER}
+  LAMBDA_CORS:
+    origin: "*"
+    headers:
+      - Access-Control-Allow-Origin
+      - Cache-Control
+      - Content-Type
+      - Authorization
+      - X-Amz-User-Agent
+      - X-Amz-Date
+      - X-Amz-Security-Token
+      - X-Api-Key
+
+plugins:
+  - serverless-deployment-bucket
+  #- serverless-plugin-include-dependencies
+  - serverless-dotenv-plugin
+  - serverless-offline
+package:
+  exclude:
+    - .git/**
+    - .idea/**
+    - dev-docker-db/**
+    - package-lock.json
+    - yarn.lock
+  individually: true
+  excludeDevDependencies: true
+
+provider:
+  timeout: ${env:ENVIRONMENT_NAME}
+  name: aws
+  runtime: nodejs12.x
+  stackName: ${env:LAMBDA_PREFIX}
+  deploymentBucket:
+    name: ${env:DEPLOYMENT_BUCKET}
+    serverSideEncryption: AES256
+  region: ${env:ENVIRONMENT_REGION}
+  apiGateway:
+    restApiId: ${env:APIGATEWAY_ID}
+    restApiRootResourceId: ${env:APIGATEWAY_ROOT_RESOURCE_ID}
+  vpc:
+    subnetIds:
+      - ${env:VPC_SUBNET_1}
+      - ${env:VPC_SUBNET_2}
+      - ${env:VPC_SUBNET_3}
+    securityGroupIds:
+      - ${env:VPC_SECURITY_GR_1}
+  environment:
+    CURRENTENV: ${env:NODE_ENV}
+    RDS_DB_NAME: ${env:RDS_DB_NAME}
+    RDS_DB_PASSWORD: ${env:RDS_DB_PASSWORD}
+    RDS_DB_USERNAME: ${env:RDS_DB_USERNAME}
+    RDS_DB_ENDPOINT: ${env:RDS_DB_ENDPOINT}
+    RDS_DB_PORT: ${env:RDS_DB_PORT}
+    AWS_S3_BUCKET_FILES: ${env:AWS_S3_BUCKET_FILES}
+    AWS_COGNITO_USER_POOL: ${env:AWS_COGNITO_USER_POOL}
+    AWS_COGNITO_USER_POOL_CLIENT_ID: ${env:AWS_COGNITO_USER_POOL_CLIENT_ID}
+    AWS_COGNITO_ADMIN_POOL: ${env:AWS_COGNITO_ADMIN_POOL}
+    AWS_COGNITO_ADMIN_POOL_CLIENT_ID: ${env:AWS_COGNITO_ADMIN_POOL_CLIENT_ID}
+    WEB_ADMIN_URL: ${env:WEB_ADMIN_URL}
+    WEB_NURSE_URL: ${env:WEB_NURSE_URL}
+    PAGESIZE: 10
+
+functions:
+  users:
+    name: ${env:LAMBDA_USERS_FUNCTION_NAME}
+    role: ${env:LAMBDA_USERS_ROLE}
+    handler: index.users
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          path: /users/
+          method: any
+          cors: ${self:custom.LAMBDA_CORS}
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+      - http:
+          path: "/users/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+
+  contacts:
+    name: ${env:LAMBDA_CONTACTS_FUNCTION_NAME}
+    role: ${env:LAMBDA_CONTACTS_ROLE}
+    handler: index.contacts
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          path: /contacts/
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+      - http:
+          path: "/contacts/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+  clients:
+    name: ${env:LAMBDA_CLIENTS_FUNCTION_NAME}
+    role: ${env:LAMBDA_CLIENTS_ROLE}
+    handler: index.clients
+    events:
+      - http:
+          path: /clientservice/
+          method: any
+          cors: ${self:custom.LAMBDA_CORS}
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+      - http:
+          path: "/clientservice/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+  lookups:
+    name: ${env:LAMBDA_LOOKUPS_FUNCTION_NAME}
+    role: ${env:LAMBDA_LOOKUPS_ROLE}
+    handler: index.lookups
+    events:
+      - http:
+          path: /lookups/
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+      - http:
+          path: "/lookups/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+          authorizer: ${self:custom.LAMBDA_AUTHORISER}
+  session:
+    name: ${env:LAMBDA_SESSION_FUNCTION_NAME}
+    role: ${env:LAMBDA_SESSION_ROLE}
+    handler: index.session
+    events:
+      - http:
+          path: /session/
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+      - http:
+          path: "/session/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+  payments:
+    name: ${env:LAMBDA_PAYMENTS_FUNCTION_NAME}
+    role: ${env:LAMBDA_PAYMENTS_ROLE}
+    handler: index.payments
+    events:
+      - http:
+          path: /paymentservie/
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+      - http:
+          path: "/paymentservie/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+  test:
+    name: ${env:LAMBDA_TEST_FUNCTION_NAME}
+    role: ${env:LAMBDA_TEST_ROLE}
+    handler: index.test
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          path: /test/
+          method: any
+  admincp:
+    name: ${env:LAMBDA_ADMINCP_FUNCTION_NAME}
+    role: ${env:LAMBDA_ADMINCP_ROLE}
+    handler: index.admincp
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          path: /admincp/
+          cors: true
+          method: any
+          authorizer: ${env:LAMBDA_AUTHORISER_ADMIN}
+      - http:
+          path: "/admincp/{proxy+}"
+          method: any
+          cors: true
+          authorizer: ${env:LAMBDA_AUTHORISER_ADMIN}
+  presign:
+    name: ${env:LAMBDA_PRESIGN_FUNCTION_NAME}
+    role: ${env:LAMBDA_PRESIGN_ROLE}
+    handler: index.presign
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          cors: ${self:custom.LAMBDA_CORS}
+          path: /presign
+          method: POST
+  public:
+    name: ${env:LAMBDA_PUBLIC_FUNCTION_NAME}
+    role: ${env:LAMBDA_PUBLIC_ROLE}
+    handler: index.public
+    cors: ${self:custom.LAMBDA_CORS}
+    events:
+      - http:
+          path: /public/
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+      - http:
+          path: "/public/{proxy+}"
+          cors: ${self:custom.LAMBDA_CORS}
+          method: any
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId: ${env:APIGATEWAY_ID}
+    GatewayResponseDefault5XX:
+      Type: "AWS::ApiGateway::GatewayResponse"
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId: ${env:APIGATEWAY_ID}

@@ -1,0 +1,3 @@
+Samples contain mostly work that I own. I have a lot of code for which I have a NDA signed.
+Most of my work projects are Typescript.
+I have included Web,Mobile,server code  as well as Infrastructure as Code.
